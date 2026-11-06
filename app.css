@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  --bg: #0a0b0f;
+  --bg: #12161f;
   --bg-elev: #12141a;
   --panel: #1a1d24;
   --panel-2: #151820;
@@ -56,7 +56,7 @@ header {
 
 .badge {
   background: var(--amber);
-  color: #0a0b0f;
+  color: #12161f;
   border-radius: 3px;
   padding: 3px 8px;
   font-weight: 700;
@@ -522,3 +522,7 @@ canvas {
 .coin-meta{color:var(--muted-2,#8e8e93);margin:6px 0 10px;font-family:var(--mono,ui-monospace,monospace);font-size:13px}
 .coin-actions{margin:8px 0}.btn{font:inherit;border-radius:10px;padding:10px 14px;border:0;cursor:pointer}.btn.ghost{background:#1a1d24;color:#f5f5f7;border:1px solid #2a2f3a}
 .muted{color:#8e8e93;font-size:12px;display:block;margin-top:8px}
+
+.badge[hidden],#badge[hidden]{display:none!important}
+.hdr-left{display:flex;align-items:center;gap:8px}
+body.desk{background:#12161f!important;background-image:radial-gradient(1200px 600px at 10% -10%,#1a2240 0%,#12161f 55%,#0e1118 100%)!important}

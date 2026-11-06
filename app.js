@@ -147,7 +147,7 @@ function drawEquity(series){
   }
 }
 
-async function load(){try{const s=await api('/api/state');err();$('badge').textContent=s.mode+(PLAN_B?' · B':'');$('badge').className='badge'+(s.mode=='LIVE'?' live':'');odo(s.balance);
+async function load(){try{const s=await api('/api/state');err();const b=$('badge');if(b){b.hidden=true;b.textContent=s.mode+(PLAN_B?' · B':'');b.className='badge'+(s.mode=='LIVE'?' live':'');}odo(s.balance);
 $('ticket').textContent=s.ticket&&s.ticket.message||'';
 renderPositions(s.positions);
 renderActivity(s.activity);
