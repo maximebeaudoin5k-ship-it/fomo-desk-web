@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json"><link rel="stylesheet" href="app.css"><title>Desk</title></head>
+<body>
+<header><span id="badge" class="badge">PAPER</span><span id="conn" class="dot"></span></header>
+<main>
+ <section id="home" class="tab on">
+  <div class="label">Balance</div><div id="bal" class="odo">$0.00</div>
+  <div id="ticket" class="warn"></div>
+  <h3>Open positions</h3><div id="pos" class="list"><div class="empty">No open positions</div></div>
+  <h3>Activity</h3><div id="act" class="list"><div class="empty">Nothing yet tonight</div></div>
+ </section>
+ <section id="agents" class="tab"><div id="cards"></div></section>
+ <section id="coin" class="tab"><div id="coinv" class="empty">Tap a coin</div><canvas id="chart" width="360" height="200"></canvas></section>
+ <section id="account" class="tab">
+  <div id="acct"></div>
+  <h3>Command</h3><form id="cmdf"><input id="cmd" placeholder="status · set stop to -8% · why X"><button>Send</button></form><pre id="reply"></pre>
+  <button id="pushbtn">Enable push</button>
+ </section>
+ <div id="err" class="error" hidden></div>
+</main>
+<nav><button data-t="home" class="on">Home</button><button data-t="agents">Agents</button><button data-t="coin">Coin</button><button data-t="account">Account</button></nav>
+<script src="chart.js"></script><script src="app.js"></script></body></html>

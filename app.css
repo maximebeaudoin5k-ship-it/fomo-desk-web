@@ -1,0 +1,15 @@
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#000;color:#f5f5f7;font:15px -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 0 80px}
+header{display:flex;justify-content:space-between;padding:12px 16px}.badge{background:#ff9f0a;color:#000;border-radius:8px;padding:2px 8px;font-weight:700;font-size:12px}.badge.live{background:#30d158}
+.dot{width:10px;height:10px;border-radius:50%;background:#555}.dot.ok{background:#30d158}
+main{padding:0 16px}.tab{display:none}.tab.on{display:block}.label{color:#8e8e93;font-size:13px}
+.odo{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;transition:all .6s}
+h3{color:#8e8e93;font-size:13px;text-transform:uppercase;margin:20px 0 6px}
+.list{background:#1c1c1e;border-radius:12px}.row{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #2c2c2e}.row:last-child{border:0}
+.row small{display:block;color:#8e8e93}.row a{color:#0a84ff}.kill{color:#8e8e93;text-decoration:line-through #ff453a}
+.empty{color:#8e8e93;padding:16px;text-align:center}.error{background:#3a0d0d;color:#ff453a;padding:12px;border-radius:12px;margin-top:12px}
+.warn{color:#ff9f0a;font-size:13px}.card{background:#1c1c1e;border-radius:12px;padding:14px;margin-bottom:10px}.card b{font-size:17px}
+.pill{display:inline-block;border-radius:10px;padding:2px 8px;font-size:12px;margin-right:6px}.red{background:#3a0d0d;color:#ff453a}.green{background:#0d3a1a;color:#30d158}
+.strips{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}.strip{height:6px;border-radius:3px;background:#3a3a3c}.strip.p{background:#30d158}.strip.f{background:#ff453a}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#111;border-top:1px solid #2c2c2e;padding-bottom:env(safe-area-inset-bottom)}nav button{flex:1;background:none;border:0;color:#8e8e93;padding:14px;font-size:13px}nav button.on{color:#0a84ff}
+input,button{font:inherit}#cmdf{display:flex;gap:6px}#cmd{flex:1;background:#1c1c1e;border:0;color:#fff;padding:10px;border-radius:10px}#cmdf button,#pushbtn{background:#0a84ff;color:#fff;border:0;border-radius:10px;padding:10px 14px;margin-top:8px}
+pre{white-space:pre-wrap;color:#8e8e93}canvas{width:100%;margin-top:12px}
