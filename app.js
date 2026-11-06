@@ -115,7 +115,7 @@ function renderPositions(positions){
     setHTML('pos','<div class="empty">Aucune position · No open positions</div>');
     return;
   }
-  setHTML('pos',list.map(p=>`<div class="row"><span onclick="coin('${esc(p.mint)}')">${esc(p.name)}<small>$${p.size_usd} @ ${p.entry_price} · stop -${p.stop_pct}%</small></span><a href="${esc(p.link)}" target="_blank">Sell on FOMO</a></div>`).join(''));
+  setHTML('pos',list.map(p=>`<div class="row row-tap" onclick="coin('${esc(p.mint)}')"><span>${esc(p.name)}<small>$${p.size_usd} @ ${p.entry_price} · stop -${p.stop_pct}%</small></span><span class="row-action">Voir</span></div>`).join(''));
 }
 
 function renderActivity(activity){
@@ -126,8 +126,8 @@ function renderActivity(activity){
   }
   setHTML('act',list.map(a=>{
     const kind=esc(a.kind||'info');
-    const title=a.link
-      ? `<a href="${esc(a.link)}" target="_blank">${esc(a.title)}</a>`
+    const title = a.mint
+      ? `<span class="linkish" onclick="event.stopPropagation();coin('${esc(a.mint)}')">${esc(a.title)}</span>`
       : esc(a.title);
     const mode=a.mode==='PAPER'?'PAPER · ':'';
     return `<div class="act-item ${kind}">
@@ -171,8 +171,20 @@ setHTML('cards',`
 <div class="anote" style="font-family:var(--mono);font-size:12px;color:var(--muted-2);margin-top:6px">@${esc(handles)} · +${esc(copy.delay_s)}s · TP ${esc(copy.tp_mult)}× · lock ${esc(copy.lock_time)} ET</div>
 <div style="font-family:var(--mono);font-size:11px;color:var(--muted-2);margin-top:4px">${esc((copy.hb&&copy.hb.note)||'')}</div></div>`);}
 
-async function coin(m){tab('coin');try{const c=await api('/api/coin/'+m);$('coinv').innerHTML=`<b>${esc(c.name)}</b> <a href="${c.link}" target="_blank">Open on FOMO</a><div>holders ${c.holders??'—'}</div>`;
-const p=c.position;drawChart($('chart'),c.prices||[],p&&p.status!='closed'?p.entry_price*(1-p.stop_pct/100):null)}catch(e){$('coinv').textContent='Could not load coin'}}
+async function coin(m){tab('coin');try{const c=await api('/api/coin/'+m);
+const p=c.position;
+const stop=p&&p.status!='closed'?p.entry_price*(1-p.stop_pct/100):null;
+setHTML('coinv',`<b>${esc(c.name||m)}</b>
+<div class="coin-meta">holders ${c.holders??'—'} · ${p?('$'+p.size_usd+' @ '+p.entry_price):'no position'}</div>
+<div class="coin-actions">
+  <button type="button" class="btn ghost" id="fomolink">Lien FOMO (externe)</button>
+</div>
+<small class="muted">Le desk reste ici — FOMO s’ouvre seulement si tu tapes le bouton.</small>`);
+const btn=$('fomolink');
+if(btn&&c.link){btn.onclick=()=>{window.open(c.link,'_blank','noopener');};}
+else if(btn){btn.disabled=true;btn.textContent='Pas de lien FOMO';}
+drawChart($('chart'),c.prices||[],stop);
+}catch(e){setHTML('coinv',`<b>${esc(m)}</b><div class="empty">Coin non publié encore (Plan B) — ${esc(e.message)}</div>`);}}
 async function account(){try{const a=await api('/api/account');
   const settings=a.settings||{};
   const handle=a.fomo_handle||settings['desk.fomo_handle']||'';
