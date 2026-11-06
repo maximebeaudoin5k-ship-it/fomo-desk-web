@@ -43,9 +43,11 @@ const p=c.position;drawChart($('chart'),c.prices||[],p&&p.status!='closed'?p.ent
 async function account(){try{const a=await api('/api/account');
   const settings=a.settings||{};
   const handle=a.fomo_handle||settings['desk.fomo_handle']||'';
-  const profile=a.profile_url||('https://fomo.family/profile/'+handle);
-  const signup=a.signup_url||'https://fomo.family/r/savipww';
-  let html=`<div class="card">FOMO @${esc(handle)} · <a href="${profile}" target="_blank">profile</a><br><a href="${signup}" target="_blank">Invite</a>`;
+  const profile=a.profile_url||'';
+  const signup=a.signup_url||'';
+  let html=`<div class="card">FOMO @${esc(handle)}`;
+  if(profile)html+=` · <a href="${profile}" target="_blank">profile</a>`;
+  if(signup)html+=`<br><a href="${signup}" target="_blank">Invite</a>`;
   if(PLAN_B)html+=`<br><small style="color:#8e8e93">Plan B · settings read-only (change on the desk host)</small>`;
   html+=`</div>`;
   html+=Object.entries(settings).map(([k,v])=>PLAN_B
