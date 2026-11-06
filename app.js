@@ -9,6 +9,7 @@ const T=localStorage.getItem('t')||'';
 const PLAN_B=!!D;
 const BASE=(()=>{const p=location.pathname;if(p.endsWith('/'))return p.slice(0,-1);const i=p.lastIndexOf('/');return i<=0?'':p.slice(0,i)})();
 const $=id=>document.getElementById(id);
+const setHTML=(id,html)=>{const el=$(id);if(!el)return;el.innerHTML=html;};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=(p,o={})=>{
   if(PLAN_B){
@@ -47,7 +48,7 @@ function agentTone(hb){
 }
 
 function runbar(a){
-  if(!a){$('runbar').innerHTML='<span class="run-pill muted">—</span>';return}
+  if(!a){setHTML('runbar','<span class="run-pill muted">—</span>');return}
   const keys=['scanner','auditor','analyst','executor','risk','copy'];
   let ok=0,warn=0,off=0;
   keys.forEach(k=>{
@@ -58,11 +59,11 @@ function runbar(a){
   const total=keys.filter(k=>a[k]).length || keys.length;
   const running=ok+warn;
   const mainCls = off===total ? 'off' : (warn ? 'warn' : 'ok');
-  $('runbar').innerHTML =
+  setHTML('runbar',
     `<span class="run-pill ${mainCls}"><span class="hb"></span>${running} running</span>` +
     (ok ? `<span class="run-pill ok">${ok} ok</span>` : '') +
     (warn ? `<span class="run-pill warn">${warn} lag</span>` : '') +
-    (off ? `<span class="run-pill off">${off} off</span>` : '');
+    (off ? `<span class="run-pill off">${off} off</span>` : ''));
 }
 
 function squareNote(key, ag){
@@ -95,8 +96,8 @@ function agrid(a){
     ['risk','Risk'],
     ['copy','Copy'],
   ];
-  if(!a){$('agrid').innerHTML='';return}
-  $('agrid').innerHTML=order.map(([k,label])=>{
+  if(!a){setHTML('agrid','');return}
+  setHTML('agrid',order.map(([k,label])=>{
     const ag=a[k]||{};
     const tone=agentTone(ag.hb);
     const cls=['asq',tone,k==='copy'?'copy':''].filter(Boolean).join(' ');
@@ -105,25 +106,25 @@ function agrid(a){
       <div class="astat">${esc(squareStat(k,ag))}</div>
       <div class="anote">${esc(squareNote(k,ag))}</div>
     </div>`;
-  }).join('');
+  }).join(''));
 }
 
 function renderPositions(positions){
   const list=Array.isArray(positions)?positions:[];
   if(!list.length){
-    $('pos').innerHTML='<div class="empty">Aucune position · No open positions</div>';
+    setHTML('pos','<div class="empty">Aucune position · No open positions</div>');
     return;
   }
-  $('pos').innerHTML=list.map(p=>`<div class="row"><span onclick="coin('${esc(p.mint)}')">${esc(p.name)}<small>$${p.size_usd} @ ${p.entry_price} · stop -${p.stop_pct}%</small></span><a href="${esc(p.link)}" target="_blank">Sell on FOMO</a></div>`).join('');
+  setHTML('pos',list.map(p=>`<div class="row"><span onclick="coin('${esc(p.mint)}')">${esc(p.name)}<small>$${p.size_usd} @ ${p.entry_price} · stop -${p.stop_pct}%</small></span><a href="${esc(p.link)}" target="_blank">Sell on FOMO</a></div>`).join(''));
 }
 
 function renderActivity(activity){
   const list=Array.isArray(activity)?activity:[];
   if(!list.length){
-    $('act').innerHTML='<div class="empty">Nothing yet tonight</div>';
+    setHTML('act','<div class="empty">Nothing yet tonight</div>');
     return;
   }
-  $('act').innerHTML=list.map(a=>{
+  setHTML('act',list.map(a=>{
     const kind=esc(a.kind||'info');
     const title=a.link
       ? `<a href="${esc(a.link)}" target="_blank">${esc(a.title)}</a>`
@@ -134,7 +135,7 @@ function renderActivity(activity){
       <div class="abody"><div class="atitle">${mode}${title}</div><span class="asub">${esc(a.sub||'')}</span></div>
       <div class="aright">${esc(a.right||'')}</div>
     </div>`;
-  }).join('');
+  }).join(''));
 }
 
 function drawEquity(series){
@@ -156,19 +157,19 @@ runbar(s.agents);
 drawEquity(s.equity);
 $('conn').className='dot ok'}catch(e){err(PLAN_B?(e.message=='404'?'Data path not published yet':'Desk data unreachable ('+e.message+')'):(e.message=='401'?'Not signed in. Open the app link with #t=…':'Desk unreachable ('+e.message+')'));$('conn').className='dot'}}
 
-function cards(a){if(!a)return;const L=a.auditor&&a.auditor.last;const strips=L&&L.layers?L.layers.map(l=>`<div class="strip ${l.pass===true?'p':l.pass===false?'f':''}"></div>`).join(''):'<div class="strip"></div>'.repeat(8);
-const v=a.analyst&&a.analyst.last;
-const copy=a.copy||{};
+function cards(a){if(!a)return;const sc=a.scanner||{},au=a.auditor||{},an=a.analyst||{},ex=a.executor||{},rk=a.risk||{},copy=a.copy||{};
+const L=au.last;const strips=L&&L.layers?L.layers.map(l=>`<div class="strip ${l.pass===true?'p':l.pass===false?'f':''}"></div>`).join(''):'<div class="strip"></div>'.repeat(8);
+const v=an.last;
 const handles=String(copy.handles||'').replace(/^"|"$/g,'');
-$('cards').innerHTML=`
-<div class="card"><b>Scanner</b><div>${a.scanner.pools} pools</div>${(a.scanner.feed||[]).slice(0,6).map(f=>{let j={};try{j=typeof f.json==='string'?JSON.parse(f.json):f.json||{}}catch(e){}return `<div class="${f.verdict=='kill'?'kill':''}">${esc(j.name||(f.mint||'').slice(0,6))} ${f.verdict=='pass'?'· liq $'+Math.round(j.liquidityUsd||0)+' · → auditor':'· '+esc(f.reason)}</div>`}).join('')}</div>
-<div class="card"><b>Auditor</b><div>${a.auditor.taken} taken apart · ${a.auditor.rejected} rejected</div><div class="strips">${strips}</div><div>${L?(L.passed?'8/8 → Executor':esc(L.reason)):''}</div></div>
-<div class="card"><b>Analyst${a.analyst.mode=='rules'?' (rules)':''}</b><div>Scoring ${v?v.score:'—'}</div></div>
-<div class="card"><b>Executor</b><div>${a.executor.trades} trades · ${a.executor.stack_pct}% of stack</div></div>
-<div class="card"><b>Risk</b><div>${a.risk.guarding?'Guarding':'Idle'}</div><span class="pill red">stop -${a.risk.stop_pct}%</span><span class="pill green">trail ${a.risk.trail_pct}%</span></div>
+setHTML('cards',`
+<div class="card"><b>Scanner</b><div>${sc.pools??0} pools</div>${(sc.feed||[]).slice(0,6).map(f=>{let j={};try{j=typeof f.json==='string'?JSON.parse(f.json):f.json||{}}catch(e){}return `<div class="${f.verdict=='kill'?'kill':''}">${esc(j.name||(f.mint||'').slice(0,6))} ${f.verdict=='pass'?'· liq $'+Math.round(j.liquidityUsd||0)+' · → auditor':'· '+esc(f.reason)}</div>`}).join('')}</div>
+<div class="card"><b>Auditor</b><div>${au.taken??0} taken apart · ${au.rejected??0} rejected</div><div class="strips">${strips}</div><div>${L?(L.passed?'8/8 → Executor':esc(L.reason)):''}</div></div>
+<div class="card"><b>Analyst${an.mode=='rules'?' (rules)':''}</b><div>Scoring ${v?v.score:'—'}</div></div>
+<div class="card"><b>Executor</b><div>${ex.trades??0} trades · ${ex.stack_pct??'—'}% of stack</div></div>
+<div class="card"><b>Risk</b><div>${rk.guarding?'Guarding':'Idle'}</div><span class="pill red">stop -${rk.stop_pct??'—'}%</span><span class="pill green">trail ${rk.trail_pct??'—'}%</span></div>
 <div class="card"><b>Copy</b><div>${copy.enabled?'PAPER following':'Off'} · ${copy.open||0} open</div>
 <div class="anote" style="font-family:var(--mono);font-size:12px;color:var(--muted-2);margin-top:6px">@${esc(handles)} · +${esc(copy.delay_s)}s · TP ${esc(copy.tp_mult)}× · lock ${esc(copy.lock_time)} ET</div>
-<div style="font-family:var(--mono);font-size:11px;color:var(--muted-2);margin-top:4px">${esc((copy.hb&&copy.hb.note)||'')}</div></div>`}
+<div style="font-family:var(--mono);font-size:11px;color:var(--muted-2);margin-top:4px">${esc((copy.hb&&copy.hb.note)||'')}</div></div>`);}
 
 async function coin(m){tab('coin');try{const c=await api('/api/coin/'+m);$('coinv').innerHTML=`<b>${esc(c.name)}</b> <a href="${c.link}" target="_blank">Open on FOMO</a><div>holders ${c.holders??'—'}</div>`;
 const p=c.position;drawChart($('chart'),c.prices||[],p&&p.status!='closed'?p.entry_price*(1-p.stop_pct/100):null)}catch(e){$('coinv').textContent='Could not load coin'}}
