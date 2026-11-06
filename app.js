@@ -12,12 +12,11 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=(p,o={})=>{
   if(PLAN_B){
-    // Map API paths to Plan B static JSON under /d/{DATA_PATH}/
     let url=null;
     if(p==='/api/state')url=`${BASE}/d/${D}/state.json`;
     else if(p==='/api/activity')url=`${BASE}/d/${D}/activity.json`;
     else if(p.startsWith('/api/coin/'))url=`${BASE}/d/${D}/coin/${p.slice('/api/coin/'.length)}.json`;
-    else if(p==='/api/account')url=`${BASE}/d/${D}/state.json`; // settings embedded, read-only
+    else if(p==='/api/account')url=`${BASE}/d/${D}/state.json`;
     else return Promise.reject(new Error('read-only in Plan B'));
     return fetch(url,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
   }
@@ -26,18 +25,151 @@ const api=(p,o={})=>{
 };
 let shown=0;function odo(v){const s=shown,t0=performance.now();const f=n=>{const k=Math.min(1,(n-t0)/600);$('bal').textContent='$'+(s+(v-s)*k).toFixed(2);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f);shown=v}
 function err(m){$('err').hidden=!m;$('err').textContent=m||''}
+
+function hbStatus(hb){
+  if(!hb) return 'off';
+  const st=String(hb.status||'').toLowerCase();
+  if(hb.paused) return 'warn';
+  if(st==='ok'||st==='following'||st==='guarding'||st==='working') return 'ok';
+  if(st==='off'||st==='stopped') return 'off';
+  return 'warn';
+}
+function hbAgeOk(hb){
+  if(!hb||!hb.ts) return false;
+  const t=Date.parse(hb.ts);
+  if(!Number.isFinite(t)) return false;
+  return (Date.now()-t) < 120000; // 2 min
+}
+function agentTone(hb){
+  const base=hbStatus(hb);
+  if(base==='ok' && !hbAgeOk(hb)) return 'warn';
+  return base;
+}
+
+function runbar(a){
+  if(!a){$('runbar').innerHTML='<span class="run-pill muted">—</span>';return}
+  const keys=['scanner','auditor','analyst','executor','risk','copy'];
+  let ok=0,warn=0,off=0;
+  keys.forEach(k=>{
+    if(!a[k]){off++;return}
+    const t=agentTone(a[k].hb);
+    if(t==='ok')ok++; else if(t==='off')off++; else warn++;
+  });
+  const total=keys.filter(k=>a[k]).length || keys.length;
+  const running=ok+warn;
+  const mainCls = off===total ? 'off' : (warn ? 'warn' : 'ok');
+  $('runbar').innerHTML =
+    `<span class="run-pill ${mainCls}"><span class="hb"></span>${running} running</span>` +
+    (ok ? `<span class="run-pill ok">${ok} ok</span>` : '') +
+    (warn ? `<span class="run-pill warn">${warn} lag</span>` : '') +
+    (off ? `<span class="run-pill off">${off} off</span>` : '');
+}
+
+function squareNote(key, ag){
+  if(!ag) return '—';
+  if(key==='scanner') return `${ag.pools??0} pools`;
+  if(key==='auditor') return `${ag.taken??0} taken · ${ag.rejected??0} rej`;
+  if(key==='analyst') return `score ${(ag.last&&ag.last.score)!=null?ag.last.score:'—'} · ${ag.mode||''}`;
+  if(key==='executor') return `${ag.trades??0} trades · ${ag.stack_pct??'—'}%`;
+  if(key==='risk') return ag.guarding ? `guard · stop -${ag.stop_pct}%` : `idle · stop -${ag.stop_pct}%`;
+  if(key==='copy'){
+    const handles=String(ag.handles||'').replace(/^"|"$/g,'').split(',').filter(Boolean);
+    const n=handles.length;
+    const st=(ag.hb&&ag.hb.status)|| (ag.enabled?'ok':'off');
+    return `${n} handles · ${ag.open||0} open · ${st}`;
+  }
+  return (ag.hb&&ag.hb.note)||'';
+}
+function squareStat(key, ag){
+  const hb=ag&&ag.hb;
+  const st=hb&&hb.status ? String(hb.status) : (ag?'idle':'missing');
+  return st;
+}
+
+function agrid(a){
+  const order=[
+    ['scanner','Scanner'],
+    ['auditor','Auditor'],
+    ['analyst','Analyst'],
+    ['executor','Executor'],
+    ['risk','Risk'],
+    ['copy','Copy'],
+  ];
+  if(!a){$('agrid').innerHTML='';return}
+  $('agrid').innerHTML=order.map(([k,label])=>{
+    const ag=a[k]||{};
+    const tone=agentTone(ag.hb);
+    const cls=['asq',tone,k==='copy'?'copy':''].filter(Boolean).join(' ');
+    return `<div class="${cls}" data-agent="${k}">
+      <div class="aname">${esc(label)}</div>
+      <div class="astat">${esc(squareStat(k,ag))}</div>
+      <div class="anote">${esc(squareNote(k,ag))}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPositions(positions){
+  const list=Array.isArray(positions)?positions:[];
+  if(!list.length){
+    $('pos').innerHTML='<div class="empty">Aucune position · No open positions</div>';
+    return;
+  }
+  $('pos').innerHTML=list.map(p=>`<div class="row"><span onclick="coin('${esc(p.mint)}')">${esc(p.name)}<small>$${p.size_usd} @ ${p.entry_price} · stop -${p.stop_pct}%</small></span><a href="${esc(p.link)}" target="_blank">Sell on FOMO</a></div>`).join('');
+}
+
+function renderActivity(activity){
+  const list=Array.isArray(activity)?activity:[];
+  if(!list.length){
+    $('act').innerHTML='<div class="empty">Nothing yet tonight</div>';
+    return;
+  }
+  $('act').innerHTML=list.map(a=>{
+    const kind=esc(a.kind||'info');
+    const title=a.link
+      ? `<a href="${esc(a.link)}" target="_blank">${esc(a.title)}</a>`
+      : esc(a.title);
+    const mode=a.mode==='PAPER'?'PAPER · ':'';
+    return `<div class="act-item ${kind}">
+      <div class="rail"></div>
+      <div class="abody"><div class="atitle">${mode}${title}</div><span class="asub">${esc(a.sub||'')}</span></div>
+      <div class="aright">${esc(a.right||'')}</div>
+    </div>`;
+  }).join('');
+}
+
+function drawEquity(series){
+  const cv=$('eqchart');
+  if(!cv) return;
+  const prices=Array.isArray(series)?series:[];
+  if(typeof drawChart==='function'){
+    drawChart(cv, prices.length?prices:[{price:shown||0},{price:shown||0}], null);
+  }
+}
+
 async function load(){try{const s=await api('/api/state');err();$('badge').textContent=s.mode+(PLAN_B?' · B':'');$('badge').className='badge'+(s.mode=='LIVE'?' live':'');odo(s.balance);
 $('ticket').textContent=s.ticket&&s.ticket.message||'';
-$('pos').innerHTML=s.positions.length?s.positions.map(p=>`<div class="row"><span onclick="coin('${p.mint}')">${esc(p.name)}<small>$${p.size_usd} @ ${p.entry_price} · stop -${p.stop_pct}%</small></span><a href="${p.link}" target="_blank">Sell on FOMO</a></div>`).join(''):'<div class="empty">No open positions</div>';
-$('act').innerHTML=s.activity.length?s.activity.map(a=>`<div class="row"><span>${a.mode=='PAPER'?'PAPER · ':''}${a.link?`<a href="${a.link}" target="_blank">${esc(a.title)}</a>`:esc(a.title)}<small>${esc(a.sub)}</small></span><span>${esc(a.right)}</span></div>`).join(''):'<div class="empty">Nothing yet tonight</div>';
-cards(s.agents);$('conn').className='dot ok'}catch(e){err(PLAN_B?(e.message=='404'?'Data path not published yet':'Desk data unreachable ('+e.message+')'):(e.message=='401'?'Not signed in. Open the app link with #t=…':'Desk unreachable ('+e.message+')'));$('conn').className='dot'}}
+renderPositions(s.positions);
+renderActivity(s.activity);
+agrid(s.agents);
+cards(s.agents);
+runbar(s.agents);
+drawEquity(s.equity);
+$('conn').className='dot ok'}catch(e){err(PLAN_B?(e.message=='404'?'Data path not published yet':'Desk data unreachable ('+e.message+')'):(e.message=='401'?'Not signed in. Open the app link with #t=…':'Desk unreachable ('+e.message+')'));$('conn').className='dot'}}
+
 function cards(a){if(!a)return;const L=a.auditor&&a.auditor.last;const strips=L&&L.layers?L.layers.map(l=>`<div class="strip ${l.pass===true?'p':l.pass===false?'f':''}"></div>`).join(''):'<div class="strip"></div>'.repeat(8);
-const v=a.analyst&&a.analyst.last;$('cards').innerHTML=`
+const v=a.analyst&&a.analyst.last;
+const copy=a.copy||{};
+const handles=String(copy.handles||'').replace(/^"|"$/g,'');
+$('cards').innerHTML=`
 <div class="card"><b>Scanner</b><div>${a.scanner.pools} pools</div>${(a.scanner.feed||[]).slice(0,6).map(f=>{let j={};try{j=typeof f.json==='string'?JSON.parse(f.json):f.json||{}}catch(e){}return `<div class="${f.verdict=='kill'?'kill':''}">${esc(j.name||(f.mint||'').slice(0,6))} ${f.verdict=='pass'?'· liq $'+Math.round(j.liquidityUsd||0)+' · → auditor':'· '+esc(f.reason)}</div>`}).join('')}</div>
-<div class="card" onclick="tab('agents')"><b>Auditor</b><div>${a.auditor.taken} taken apart · ${a.auditor.rejected} rejected</div><div class="strips">${strips}</div><div>${L?(L.passed?'8/8 → Executor':esc(L.reason)):''}</div></div>
+<div class="card"><b>Auditor</b><div>${a.auditor.taken} taken apart · ${a.auditor.rejected} rejected</div><div class="strips">${strips}</div><div>${L?(L.passed?'8/8 → Executor':esc(L.reason)):''}</div></div>
 <div class="card"><b>Analyst${a.analyst.mode=='rules'?' (rules)':''}</b><div>Scoring ${v?v.score:'—'}</div></div>
 <div class="card"><b>Executor</b><div>${a.executor.trades} trades · ${a.executor.stack_pct}% of stack</div></div>
-<div class="card"><b>Risk</b><div>${a.risk.guarding?'Guarding':'Idle'}</div><span class="pill red">stop -${a.risk.stop_pct}%</span><span class="pill green">trail ${a.risk.trail_pct}%</span></div>`}
+<div class="card"><b>Risk</b><div>${a.risk.guarding?'Guarding':'Idle'}</div><span class="pill red">stop -${a.risk.stop_pct}%</span><span class="pill green">trail ${a.risk.trail_pct}%</span></div>
+<div class="card"><b>Copy</b><div>${copy.enabled?'PAPER following':'Off'} · ${copy.open||0} open</div>
+<div class="anote" style="font-family:var(--mono);font-size:12px;color:var(--muted-2);margin-top:6px">@${esc(handles)} · +${esc(copy.delay_s)}s · TP ${esc(copy.tp_mult)}× · lock ${esc(copy.lock_time)} ET</div>
+<div style="font-family:var(--mono);font-size:11px;color:var(--muted-2);margin-top:4px">${esc((copy.hb&&copy.hb.note)||'')}</div></div>`}
+
 async function coin(m){tab('coin');try{const c=await api('/api/coin/'+m);$('coinv').innerHTML=`<b>${esc(c.name)}</b> <a href="${c.link}" target="_blank">Open on FOMO</a><div>holders ${c.holders??'—'}</div>`;
 const p=c.position;drawChart($('chart'),c.prices||[],p&&p.status!='closed'?p.entry_price*(1-p.stop_pct/100):null)}catch(e){$('coinv').textContent='Could not load coin'}}
 async function account(){try{const a=await api('/api/account');

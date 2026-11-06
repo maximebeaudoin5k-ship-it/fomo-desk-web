@@ -42,11 +42,17 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   padding: 10px 14px 8px;
   border-bottom: 1px solid var(--border-soft);
   background: rgba(10, 11, 15, 0.85);
   backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 15;
 }
+
+.hdr-left { display: flex; align-items: center; gap: 10px; }
 
 .badge {
   background: var(--amber);
@@ -59,9 +65,7 @@ header {
   text-transform: uppercase;
   font-family: var(--mono);
 }
-.badge.live {
-  background: var(--green);
-}
+.badge.live { background: var(--green); }
 
 .dot {
   width: 8px;
@@ -75,10 +79,58 @@ header {
   box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.25), 0 0 8px rgba(0, 200, 83, 0.45);
 }
 
+.runbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 68%;
+}
+
+.run-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.run-pill.ok {
+  color: var(--green);
+  background: var(--green-dim);
+  border-color: rgba(0, 200, 83, 0.35);
+}
+.run-pill.warn {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-color: rgba(255, 179, 0, 0.35);
+}
+.run-pill.off {
+  color: var(--muted-2);
+  background: #12141a;
+}
+.run-pill .hb {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+}
+
 main { padding: 12px 14px 0; }
 
 .tab { display: none; }
 .tab.on { display: block; }
+
+.hero { margin-bottom: 4px; }
 
 .label {
   color: var(--muted);
@@ -99,6 +151,24 @@ main { padding: 12px 14px 0; }
   transition: color .6s, opacity .6s;
 }
 
+.chart-slot {
+  margin-top: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 10px 6px;
+}
+.chart-slot .label { margin-bottom: 6px; }
+#eqchart {
+  width: 100%;
+  height: 120px;
+  display: block;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  margin: 0;
+}
+
 h3 {
   color: var(--muted);
   font-size: 11px;
@@ -106,6 +176,78 @@ h3 {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   margin: 18px 0 8px;
+}
+
+/* Square agent cards on Home */
+.agrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+@media (max-width: 380px) {
+  .agrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 720px) {
+  .agrid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.asq {
+  aspect-ratio: 1 / 1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.asq::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3a4050;
+}
+.asq.ok::before {
+  background: var(--green);
+  box-shadow: 0 0 6px rgba(0, 200, 83, 0.55);
+}
+.asq.warn::before { background: var(--amber); }
+.asq.off::before { background: var(--muted-2); }
+.asq .aname {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.asq .astat {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1.2;
+}
+.asq .anote {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted-2);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.asq.copy {
+  border-color: rgba(77, 171, 247, 0.35);
+  background: linear-gradient(160deg, rgba(77, 171, 247, 0.08), var(--panel) 55%);
 }
 
 .list {
@@ -147,6 +289,57 @@ h3 {
   font-size: 12px;
 }
 
+/* Activity — visually distinct from agent cards / position list */
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.act-item {
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  background: var(--panel-2);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.act-item .rail {
+  width: 4px;
+  min-height: 100%;
+  border-radius: 2px;
+  background: var(--blue);
+  align-self: stretch;
+}
+.act-item.buy .rail { background: var(--green); }
+.act-item.sell .rail,
+.act-item.exit .rail { background: var(--red); }
+.act-item.info .rail { background: var(--amber); }
+.act-item .abody { min-width: 0; }
+.act-item .atitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.act-item .atitle a { color: var(--blue-bright); text-decoration: none; }
+.act-item .asub {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.act-item .aright {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .kill {
   color: var(--muted-2);
   text-decoration: line-through;
@@ -158,6 +351,14 @@ h3 {
   padding: 18px 14px;
   text-align: center;
   font-size: 13px;
+  background: var(--panel);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+.list .empty {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .error {

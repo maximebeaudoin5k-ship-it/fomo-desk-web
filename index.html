@@ -3,15 +3,32 @@
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json"><link rel="stylesheet" href="app.css"><title>Desk</title></head>
 <body class="desk">
-<header><span id="badge" class="badge">PAPER</span><span id="conn" class="dot"></span></header>
+<header>
+  <div class="hdr-left"><span id="badge" class="badge">PAPER</span><span id="conn" class="dot"></span></div>
+  <div id="runbar" class="runbar" aria-live="polite"><span class="run-pill muted">—</span></div>
+</header>
 <main>
  <section id="home" class="tab on">
-  <div class="label">Balance</div><div id="bal" class="odo">$0.00</div>
-  <div id="ticket" class="warn"></div>
-  <h3>Open positions</h3><div id="pos" class="list"><div class="empty">No open positions</div></div>
-  <h3>Activity</h3><div id="act" class="list"><div class="empty">Nothing yet tonight</div></div>
+  <div class="hero">
+    <div class="label">Balance</div>
+    <div id="bal" class="odo">$0.00</div>
+    <div id="ticket" class="warn"></div>
+  </div>
+  <div class="chart-slot">
+    <div class="label">Portfolio</div>
+    <canvas id="eqchart" width="360" height="120" aria-label="Portfolio chart"></canvas>
+  </div>
+  <h3>Agents</h3>
+  <div id="agrid" class="agrid"></div>
+  <h3>Open positions</h3>
+  <div id="pos" class="list"><div class="empty">Aucune position · No open positions</div></div>
+  <h3>Activity</h3>
+  <div id="act" class="activity"><div class="empty">Nothing yet tonight</div></div>
  </section>
- <section id="agents" class="tab"><div id="cards"></div></section>
+ <section id="agents" class="tab">
+  <h3>Agents detail</h3>
+  <div id="cards"></div>
+ </section>
  <section id="coin" class="tab"><div id="coinv" class="empty">Tap a coin</div><canvas id="chart" width="360" height="200"></canvas></section>
  <section id="account" class="tab">
   <div id="acct"></div>
